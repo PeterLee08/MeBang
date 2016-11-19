@@ -1,45 +1,55 @@
+```C++
 内存连续容器:
 c.erase(remove(c.begin(), c.end(), 1963), c.end());
 c.erase(remove_if(c.begin(), c.end(), badValue), c.end());
 关联容器
 c.erase(1963)
-
+```
 
 
 利用move(强制类型转换)forward(根据类型转换)可做成完美转发模板
 
 虚继承内存对象会存在多个虚表指针,增加对象内存和函数跳转复杂性,能避免就避免
 
-1.不用临时变量交换两个数
+1. 不用临时变量交换两个数
+```C++
 void swap(int *a,int *b){     
     (*a)^=(*b)^=(*a)^=(*b);   
-}  
+} 
+``` 
 即：
+```C++
 a ^= b;  
 b ^= a;  
 a ^= b;  
- 
-2.乘以2的m次方
+```
+2. 乘以2的m次方
+```C++
 int mulTwoPower(int n,int m){//计算n*(2^m)  
     return n<<m;  
 } 
- 
-3.判断一个数的奇偶性
+``` 
+
+3. 判断一个数的奇偶性
+```C++
 bool isOddNumber(int n){  
     return (n & 1) == 1;  
 }  
+```
 
-
-4.判断一个数是不是2的幂
+4. 判断一个数是不是2的幂
+```C++
 bool isFactorialofTwo(int n){  
     return (n & (n - 1)) == 0;   
 } 
+```
 
-
-5.求两个整数的平均值
+5. 求两个整数的平均值
+```C++
 int getAverage(int x, int y){  
         return (x+y) >> 1;   
 ｝
+```
 
 条款31：了解你的排序选择
 
