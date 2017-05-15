@@ -1,5 +1,5 @@
 # C++
-## 1. SFINAE
+## 1. C++ SFINAE
 **exampe 1: 通配不同类型处理**
 ```c++
     
@@ -161,7 +161,7 @@
         static const bool value = true;
     };
 ```
-## 2.完美转发
+## 2. C++ 完美转发
 ```c++
     void fun(int &x) { cout << "lvalue ref" << endl; }  
     void fun(int &&x) { cout << "rvalue ref" << endl; }  
@@ -170,4 +170,128 @@
     
     template<typename T>  
     void PerfectForward(T &&t) { fun(std::forward<T>(t)); }  
+```
+
+## 3. C++ windll 
+**获取dll地址**:
+```C++
+    CString getDllAddress(){  
+        HMODULE handle = NULL;  
+        BOOL bret = GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,  
+            _T("thismodule"),   //该dll上任意地址，这里取个字符常量或者弄个本地函数地址;  
+            &handle  
+            );  
+        if (!bret) return _T("");  
+    
+        TCHAR  szBuffer[MAX_PATH] = { 0 };  
+        GetModuleFileName(handle, szBuffer, sizeof(szBuffer));  
+        return szBuffer;  
+    }  
+```
+## 4. C++ 文本操作
+**全局cout**
+cout.rdbuf(ofs.rdbuf())
+
+**文本**
+```c++
+    std::ifstream ifs("d:/text.txt");
+    list<int> data(istream_iterator<int>{ifs}, istream_iterator<int>());
+
+    std::ofstream ofs("d:/text1.txt");
+    std::copy(begin(data), end(data), ostream_iterator<int>{ofs,"delimeter"});
+
+
+    std::ifstream t("file.txt");
+
+    //一次读入string 
+    //包括空白符 
+    std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>()); 
+    //跳过空白符
+    string fileData((istream_iterator<char>(inputFile)), istream_iterator<char>());
+    //一次读入缓冲区
+    char buf[1024] = { 0 };
+	ifs.read(buf, 1024);
+    //一次直接写出
+    std::ofstream ofs("d:/text1.txt");  
+    ofs << t.rdbuf();  
+```   
+** 变参模板 **
+** 变参输入**
+如下可以输入一行各种长度,各种类型数据(重载<<)
+```C++
+    template<typename T>
+    std::ostream& write_line(std::ostream& os, const std::string& delimitor, const T& t)
+    {
+        return os << t << 'n';    
+    }
+
+    template<typename T, typename ... Args>
+    std::ostream& write_line(std::ostream& os, const std::string& delimitor, const T& t, const Args ... args)
+    {
+        os << t << delimitor;
+        return write_line(os, delimitor, args...);
+    }
+```
+然后就可以像这样调用了
+```C++
+    std::ofstream ofs('/tmp/test.tab')
+    if (ofs) write_line(ofs, "\t", 1, 3, "sfe", "and so on")
+```
+
+## 5.C++ 捕获异常
+```c++
+      try{
+       //...
+      }
+      //MFC 异常均继承于CEXcep,而且异常都以指针形式抛出,不允许直接delete,需调用成员方法删除
+      catch(CException * e)
+      {
+        TCHAR err[1024] = {0};
+        e->GetErrorMessage(err, 1024);
+        //do something with err
+        e->Delete()
+      }
+      //boost 异常信息(具体tag一般很深因此使用diagnostic感觉更合理)
+      catch (boost::exception& e){
+        err = boost::diagnostic_information(e);
+      }
+      //标准异常均继承于std::excpetion
+      catch(std::exception& e)
+      {
+        std::string err = e.what();
+        //do something with err
+      }
+      catch(...)
+      {
+        err = "unknown error";
+      }
+```
+## 6. ｃ＋＋　比如trace函数
+```c++
+    #define  __INFO_TRACE(x, y)  TraceFunction  __info##y(x)
+    #define  _INFO_TRACE(x)      __INFO_TRACE(x, __LINE__)
+    #define  INFO_TRACE          _INFO_TRACE(__FUCTION__)
+```
+
+## 7. c++11 并发
+
+>std::future <-- std:promise|std::package_task|std::asyn
+
+```c++
+    std::promise<int> pr;
+    std::thread t([](std::promise<int>& p){ p.set_value_at_thread_exit(9); },std::ref(pr));
+    std::future<int> f = pr.get_future();
+    auto r = f.get();
+```
+```c++
+    std::packaged_task<int()> task([](){ return 7; });
+    std::thread t1(std::ref(task)); 
+    std::future<int> f1 = task.get_future(); 
+    auto r1 = f1.get();
+```
+```c++
+std::future<int> future = std::async(std::launch::async, [](){ 
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        return 8;  
+    });
 ```
