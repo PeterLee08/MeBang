@@ -295,3 +295,133 @@ std::future<int> future = std::async(std::launch::async, [](){
         return 8;  
     });
 ```
+
+# java
+## 1. java 反射　reflection
+```java
+Class cls = Class.forName("com.test.reflect.Student");  
+Method m = cls.getDeclaredMethod("func",new Class[]{int.class,String.class});  
+m.invoke(cls.newInstance(),20,"chb");
+// or: if m is static  
+m.invoke(cls,20,"chb");
+```
+
+## 2. java 注解　Annotation
+**simple**
+```java 
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@interface Todo {
+public enum Priority {LOW, MEDIUM, HIGH}
+public enum Status {STARTED, NOT_STARTED}
+String author() default "Yash";
+Priority priority() default Priority.LOW;
+Status status() default Status.NOT_STARTED;
+}
+
+///
+@Todo(priority = Todo.Priority.MEDIUM, author = "Yashwant", status = Todo.Status.STARTED)
+public void incompleteMethod1() {
+//Some business logic is written
+//But it’s not complete yet
+}
+
+///
+Class businessLogicClass = BusinessLogic.class;
+for(Method method : businessLogicClass.getMethods()) {
+Todo todoAnnotation = (Todo)method.getAnnotation(Todo.class);
+if(todoAnnotation != null) {
+System.out.println(" Method Name : " + method.getName());
+System.out.println(" Author : " + todoAnnotation.author());
+System.out.println(" Priority : " + todoAnnotation.priority());
+System.out.println(" Status : " + todoAnnotation.status());
+}
+}
+```
+complicate
+```java
+
+public class TableCreator
+{
+    public static void main(String[] args) throws Exception
+    {
+        if (args.length < 1)
+        {
+            System.out.println("arguments: annotated classes");
+            System.exit(0);
+        }
+        for (String className : args)
+        {
+            Class<?> cl = Class.forName(className);
+            DBTable dbTable = cl.getAnnotation(DBTable.class);
+            if (dbTable == null)
+            {
+                System.out.println("No DBTable annotations in class " + className);
+                continue;
+            }
+            String tableName = dbTable.name();
+            // If the name is empty, use the Class name:
+            if (tableName.length() < 1)
+                tableName = cl.getName().toUpperCase();
+            List<String> columnDefs = new ArrayList<String>();
+            for (Field field : cl.getDeclaredFields())
+            {
+                String columnName = null;
+                Annotation[] anns = field.getDeclaredAnnotations();
+                if (anns.length < 1)
+                    continue; // Not a db table column
+                if (anns[0] instanceof SQLInteger)
+                {
+                    SQLInteger sInt = (SQLInteger) anns[0];
+                    // Use field name if name not specified
+                    if (sInt.name().length() < 1)
+                        columnName = field.getName().toUpperCase();
+                    else
+                        columnName = sInt.name();
+                    columnDefs.add(columnName + " INT" + getConstraints(sInt.constraints()));
+                }
+                if (anns[0] instanceof SQLString)
+                {
+                    SQLString sString = (SQLString) anns[0];
+                    // Use field name if name not specified.
+                    if (sString.name().length() < 1)
+                        columnName = field.getName().toUpperCase();
+                    else
+                        columnName = sString.name();
+                    columnDefs.add(columnName + " VARCHAR(" + sString.value() + ")" + getConstraints(sString.constraints()));
+                }
+                StringBuilder createCommand = new StringBuilder("CREATE TABLE " + tableName + "(");
+                for (String columnDef : columnDefs)
+                    createCommand.append("\n    " + columnDef + ",");
+                // Remove trailing comma
+                String tableCreate = createCommand.substring(0, createCommand.length() - 1) + ");";
+                System.out.println("Table Creation SQL for " + className + " is :\n" + tableCreate);
+            }
+        }
+    }
+
+    private static String getConstraints(Constraints con)
+    {
+        String constraints = "";
+        if (!con.allowNull())
+            constraints += " NOT NULL";
+        if (con.primaryKey())
+            constraints += " PRIMARY KEY";
+        if (con.unique())
+            constraints += " UNIQUE";
+        return constraints;
+    }
+}
+
+/*
+   * Output: Table Creation SQL for annotations.database.Member is : CREATE
+   * TABLE MEMBER( FIRSTNAME VARCHAR(30)); Table Creation SQL for
+   * annotations.database.Member is : CREATE TABLE MEMBER( FIRSTNAME
+   * VARCHAR(30), LASTNAME VARCHAR(50)); Table Creation SQL for
+   * annotations.database.Member is : CREATE TABLE MEMBER( FIRSTNAME
+   * VARCHAR(30), LASTNAME VARCHAR(50), AGE INT); Table Creation SQL for
+   * annotations.database.Member is : CREATE TABLE MEMBER( FIRSTNAME
+   * VARCHAR(30), LASTNAME VARCHAR(50), AGE INT, HANDLE VARCHAR(30) PRIMARY
+   * KEY);
+   */
+```
